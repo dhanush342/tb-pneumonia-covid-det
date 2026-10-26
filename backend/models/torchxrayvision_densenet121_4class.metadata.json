@@ -1,0 +1,141 @@
+{
+  "model_id": "torchxrayvision-densenet121-4class",
+  "display_name": "TorchXRayVision Fine-tuned Classifier",
+  "architecture": "TorchXRayVision DenseNet-121",
+  "base_weights": "densenet121-res224-all",
+  "weight_file": "torchxrayvision_densenet121_4class.pth",
+  "class_labels": [
+    "COVID19",
+    "NORMAL",
+    "PNEUMONIA",
+    "TUBERCULOSIS"
+  ],
+  "preprocessing": {
+    "library": "torchxrayvision",
+    "input_size": [
+      224,
+      224
+    ],
+    "color": "grayscale single-channel chest X-ray",
+    "pixel_scaling": "xrv.datasets.normalize(image, 255), approximately [-1024, 1024]",
+    "resize": "xrv.datasets.XRayCenterCrop() then xrv.datasets.XRayResizer(224)",
+    "train_augmentation": [
+      "RandomAffine(degrees=7, translate=(0.03, 0.03), scale=(0.94, 1.04))",
+      "ColorJitter(brightness=0.08, contrast=0.08)"
+    ]
+  },
+  "training_date": "2026-06-01T17:34:37Z",
+  "validation_accuracy": 0.9473684210526315,
+  "test_accuracy": 0.9221789883268483,
+  "validation_confusion_matrix": {
+    "labels": [
+      "COVID19",
+      "NORMAL",
+      "PNEUMONIA",
+      "TUBERCULOSIS"
+    ],
+    "matrix": [
+      [
+        10,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        7,
+        1,
+        0
+      ],
+      [
+        0,
+        0,
+        8,
+        0
+      ],
+      [
+        1,
+        0,
+        0,
+        11
+      ]
+    ]
+  },
+  "test_confusion_matrix": {
+    "labels": [
+      "COVID19",
+      "NORMAL",
+      "PNEUMONIA",
+      "TUBERCULOSIS"
+    ],
+    "matrix": [
+      [
+        105,
+        0,
+        0,
+        1
+      ],
+      [
+        0,
+        182,
+        50,
+        2
+      ],
+      [
+        0,
+        7,
+        383,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        41
+      ]
+    ]
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.9572193995424362,
+      "validation_accuracy": 0.8947368421052632
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.35663368832997194,
+      "validation_accuracy": 0.8421052631578947
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.23104419674897472,
+      "validation_accuracy": 0.9210526315789473
+    },
+    {
+      "epoch": 4,
+      "train_loss": 0.1846883995667538,
+      "validation_accuracy": 0.8421052631578947
+    },
+    {
+      "epoch": 5,
+      "train_loss": 0.14764492481786767,
+      "validation_accuracy": 0.9210526315789473
+    },
+    {
+      "epoch": 6,
+      "train_loss": 0.12430424794408666,
+      "validation_accuracy": 0.9210526315789473
+    },
+    {
+      "epoch": 7,
+      "train_loss": 0.11316046782881445,
+      "validation_accuracy": 0.9473684210526315
+    },
+    {
+      "epoch": 8,
+      "train_loss": 0.09516362447693233,
+      "validation_accuracy": 0.9473684210526315
+    }
+  ],
+  "important_note": "TorchXRayVision pretrained outputs are not the same as this thesis class list. This file is valid for the thesis classes only after fine-tuning."
+}

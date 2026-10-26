@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  # Floci: Lightweight, open-source AWS emulator (https://github.com/floci-io/floci)
+  floci:
+    image: floci/floci:latest
+    container_name: chest-xray-floci
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=s3
+      - DEFAULT_REGION=us-east-1
+    restart: unless-stopped
+
+  # FastAPI Backend + PyTorch Models
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: chest-xray-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - FLOCI_ENDPOINT_URL=http://floci:4566
+      - AWS_S3_BUCKET_NAME=chest-xray-images
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - ENABLE_S3_STORAGE=true
+    depends_on:
+      - floci
+    restart: unless-stopped
+
+  # React Frontend (Vite)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.frontend
+    container_name: chest-xray-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped

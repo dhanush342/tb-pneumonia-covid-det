@@ -1,0 +1,27 @@
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Byte-compiled / cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Frontend dependencies and builds
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/.nodeenv*/
+
+# Environment variables
+.env
+.env.local
+
+# OS & IDE files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.run/

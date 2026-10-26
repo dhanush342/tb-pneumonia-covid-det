@@ -1,0 +1,20 @@
+{
+  "class_labels": [
+    "COVID19",
+    "NORMAL",
+    "PNEUMONIA",
+    "TUBERCULOSIS"
+  ],
+  "class_to_index": {
+    "COVID19": 0,
+    "NORMAL": 1,
+    "PNEUMONIA": 2,
+    "TUBERCULOSIS": 3
+  },
+  "index_to_class": {
+    "0": "COVID19",
+    "1": "NORMAL",
+    "2": "PNEUMONIA",
+    "3": "TUBERCULOSIS"
+  }
+}

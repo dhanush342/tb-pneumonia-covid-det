@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chest X-Ray Disease Detection</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #0f1117; color: #ffffff; min-height: 100vh; }
+        .header { background: #1a1d27; padding: 20px 40px; border-bottom: 2px solid #2d6a9f; }
+        .header h1 { color: #4a9edd; font-size: 24px; }
+        .header p { color: #888; font-size: 14px; margin-top: 5px; }
+        .container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+        .upload-section { background: #1a1d27; border-radius: 12px; padding: 40px; text-align: center; border: 2px dashed #2d6a9f; margin-bottom: 40px; transition: border-color 0.3s; }
+        .upload-section.dragover { border-color: #4a9edd; background: #1e2535; }
+        .upload-section h2 { color: #4a9edd; margin-bottom: 10px; }
+        .upload-section p { color: #888; margin-bottom: 20px; }
+        .upload-btn { background: #2d6a9f; color: white; border: none; padding: 12px 30px; border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px; }
+        .upload-btn:hover { background: #4a9edd; }
+        .analyze-btn { background: #27ae60; color: white; border: none; padding: 12px 30px; border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px; }
+        .analyze-btn:hover { background: #2ecc71; }
+        .drag-text { color: #555; font-size: 14px; margin-top: 10px; }
+        .preview-img { max-width: 300px; max-height: 300px; border-radius: 8px; margin: 20px auto; display: none; border: 2px solid #2d6a9f; }
+        .result-box { background: #1a1d27; border-radius: 12px; padding: 30px; text-align: center; display: none; }
+        .result-box h2 { color: #4a9edd; margin-bottom: 20px; }
+        .result-box img { width: 100%; max-width: 400px; border-radius: 8px; margin-bottom: 20px; }
+        .prediction { padding: 15px 20px; border-radius: 8px; font-size: 20px; font-weight: bold; margin-bottom: 10px; }
+        .prediction.positive { background: #c0392b; color: white; }
+        .prediction.normal { background: #27ae60; color: white; }
+        .confidence { color: #888; font-size: 14px; }
+        .loading { display: none; text-align: center; padding: 40px; }
+        .loading p { color: #4a9edd; font-size: 18px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Chest X-Ray Disease Detection System</h1>
+        <p>AI-powered detection for Pneumonia, COVID-19 and Tuberculosis</p>
+    </div>
+
+    <div class="container">
+        <div class="upload-section" id="dropZone">
+            <h2>Upload Chest X-Ray</h2>
+            <p>Upload a chest X-ray image and the system will analyze it</p>
+            <input type="file" id="fileInput" accept="image/*" style="display:none">
+            <button class="upload-btn" onclick="document.getElementById('fileInput').click()">Choose Image</button>
+            <button class="analyze-btn" onclick="analyze()" id="analyzeBtn" style="display:none">Analyze X-Ray</button>
+            <p class="drag-text">or drag and drop an image here</p>
+            <br>
+            <img id="previewImg" class="preview-img">
+        </div>
+
+        <div class="loading" id="loading">
+            <p>Analyzing X-Ray... Please wait</p>
+        </div>
+
+        <div class="result-box" id="results">
+            <h2>Analysis Result</h2>
+            <img id="heatmapImg" src="" alt="Grad-CAM Heatmap">
+            <div class="prediction" id="predictionBox"></div>
+            <p class="confidence" id="confidenceText"></p>
+        </div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleFile(file);
+            }
+        });
+
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            handleFile(e.target.files[0]);
+        });
+
+        function handleFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.getElementById('previewImg');
+                img.src = e.target.result;
+                img.style.display = 'block';
+                document.getElementById('analyzeBtn').style.display = 'inline-block';
+                const dt = new DataTransfer();
+                dt.items.add(file);
+                document.getElementById('fileInput').files = dt.files;
+            }
+            reader.readAsDataURL(file);
+        }
+
+        function analyze() {
+            const file = document.getElementById('fileInput').files[0];
+            if (!file) return;
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            fetch('/predict', { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('results').style.display = 'block';
+
+                const isNormal = data.prediction === 'NORMAL';
+                const box = document.getElementById('predictionBox');
+                box.textContent = isNormal ? 'Normal - No Disease Detected' : `Detected: ${data.prediction}`;
+                box.className = `prediction ${isNormal ? 'normal' : 'positive'}`;
+
+                document.getElementById('heatmapImg').src = `data:image/png;base64,${data.heatmap}`;
+                document.getElementById('confidenceText').textContent = `Confidence: ${data.confidence}%`;
+            });
+        }
+    </script>
+</body>
+</html>
