@@ -1168,6 +1168,9 @@ function App() {
                       { id: "/metrics/06_all_metrics_comparison.png", label: "All Metrics Compared" },
                       { id: "/metrics/07_training_loss_curve.png", label: "Loss Curve" },
                       { id: "/metrics/08_validation_accuracy_curve.png", label: "Validation Accuracy" },
+                      { id: "/metrics/09_latency_comparison.png", label: "⚡ Latency Comparison" },
+                      { id: "/metrics/10_throughput_comparison.png", label: "📈 Throughput (RPS)" },
+                      { id: "/metrics/11_stage_latency_breakdown.png", label: "⏱️ Stage Breakdown" },
                     ].map((chip) => (
                       <button
                         key={chip.id}

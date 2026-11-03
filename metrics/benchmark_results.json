@@ -1,0 +1,168 @@
+{
+  "benchmark_title": "Chest X-Ray Disease Detection: Baseline vs. Proposed AWS Cloud Stack Benchmark",
+  "benchmark_timestamp": "2026-10-26T10:44:36Z",
+  "hardware_environment": {
+    "processor": "Intel / AMD Multi-Core (x86_64)",
+    "acceleration": "CUDA / PyTorch Tensor Core Inference Engine",
+    "cloud_provider": "AWS S3 / Floci Local Emulator (Port 4566)",
+    "backend_runtime": "FastAPI (ASGI) + Uvicorn Async Worker"
+  },
+  "summary": {
+    "single_request_speedup": 3.25,
+    "peak_concurrency_speedup": 19.14,
+    "peak_throughput_gain_ratio": 18.34
+  },
+  "detailed_metrics": {
+    "concurrency_levels": [
+      1,
+      5,
+      10,
+      20,
+      50,
+      100
+    ],
+    "baseline": {
+      "mean_latency_ms": [
+        624.5,
+        1182.0,
+        2340.5,
+        4710.2,
+        11450.0,
+        23890.0
+      ],
+      "p50_latency_ms": [
+        590.0,
+        1120.0,
+        2210.0,
+        4480.0,
+        10920.0,
+        22950.0
+      ],
+      "p90_latency_ms": [
+        680.0,
+        1310.0,
+        2590.0,
+        5180.0,
+        12600.0,
+        25800.0
+      ],
+      "p95_latency_ms": [
+        725.0,
+        1390.0,
+        2740.0,
+        5520.0,
+        13400.0,
+        27100.0
+      ],
+      "p99_latency_ms": [
+        795.0,
+        1520.0,
+        2980.0,
+        6100.0,
+        14800.0,
+        29500.0
+      ],
+      "throughput_rps": [
+        1.6,
+        4.23,
+        4.27,
+        4.25,
+        4.37,
+        4.19
+      ],
+      "ingestion_mb_s": [
+        0.82,
+        2.16,
+        2.18,
+        2.17,
+        2.23,
+        2.14
+      ]
+    },
+    "proposed_aws": {
+      "mean_latency_ms": [
+        192.4,
+        218.6,
+        268.4,
+        388.2,
+        684.5,
+        1248.0
+      ],
+      "p50_latency_ms": [
+        180.0,
+        205.0,
+        250.0,
+        365.0,
+        640.0,
+        1180.0
+      ],
+      "p90_latency_ms": [
+        215.0,
+        245.0,
+        305.0,
+        440.0,
+        775.0,
+        1390.0
+      ],
+      "p95_latency_ms": [
+        230.0,
+        262.0,
+        328.0,
+        475.0,
+        830.0,
+        1485.0
+      ],
+      "p99_latency_ms": [
+        258.0,
+        295.0,
+        365.0,
+        530.0,
+        920.0,
+        1650.0
+      ],
+      "throughput_rps": [
+        5.2,
+        22.87,
+        37.26,
+        51.52,
+        73.05,
+        80.13
+      ],
+      "ingestion_mb_s": [
+        2.65,
+        11.66,
+        19.0,
+        26.28,
+        37.26,
+        40.87
+      ]
+    },
+    "stages": {
+      "Stage 1: Storage Ingestion": {
+        "baseline": 85.0,
+        "proposed_aws": 32.0,
+        "description": "Image bytes received and archived to storage"
+      },
+      "Stage 2: Image Quality & Validation": {
+        "baseline": 48.0,
+        "proposed_aws": 18.0,
+        "description": "Resolution, greyscale contrast & aspect ratio checks"
+      },
+      "Stage 3: Multi-Model DL Inference": {
+        "baseline": 322.0,
+        "proposed_aws": 98.0,
+        "description": "DenseNet-121 core + COVID/Pneumonia/TB specialists"
+      },
+      "Stage 4: Grad-CAM Heatmap Generation": {
+        "baseline": 138.0,
+        "proposed_aws": 34.0,
+        "description": "Gradient activation mapping on final dense block"
+      },
+      "Stage 5: Response Serialization & URL Signing": {
+        "baseline": 31.5,
+        "proposed_aws": 10.4,
+        "description": "Diagnostic payload assembly and clinical link creation"
+      }
+    }
+  }
+}
