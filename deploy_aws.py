@@ -184,6 +184,17 @@ def setup_function_url():
     except Exception:
         pass
 
+    try:
+        lam.add_permission(
+            FunctionName=LAMBDA_FUNCTION_NAME,
+            StatementId="FunctionURLAllowInvoke",
+            Action="lambda:InvokeFunction",
+            Principal="*"
+        )
+        print("  [OK] Public invoke permission added.")
+    except Exception:
+        pass
+
     return url
 
 def test_deployment_url(url):
