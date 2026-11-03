@@ -7,7 +7,9 @@ This comprehensive guide details the **cloud architecture, workflow, and deploym
 3. [AWS S3 Bucket & IAM Configuration in the Cloud](#3-aws-s3-bucket--iam-setup)
 4. [AWS EC2 Deployment Guide (Free Tier)](#4-aws-ec2-deployment-12-months-free)
 5. [Docker Compose Full-Stack Deployment (With Floci)](#5-docker-compose-full-stack-deployment)
-6. [Alternative Cloud Options (GCP / Zoho Catalyst / Hugging Face)](#6-alternative-cloud-platforms)
+6. [Serverless AWS Lambda & API Gateway Deployment](#6-serverless-aws-lambda--api-gateway-deployment)
+7. [Automated CI/CD Pipeline (GitHub Actions)](#7-automated-cicd-pipeline-github-actions)
+8. [Alternative Cloud Options (GCP / Zoho Catalyst / Hugging Face)](#8-alternative-cloud-platforms)
 
 ---
 
@@ -298,7 +300,53 @@ sudo systemctl restart nginx
 
 ---
 
-## 2. Google Cloud Platform (GCP) Deployment (Always Free)
+## 6. Serverless AWS Lambda & API Gateway Deployment
+
+The application features a live serverless deployment using **AWS Lambda** integrated with **AWS API Gateway** and **AWS S3**:
+
+* **Live API Gateway Endpoint**:  
+  `https://htnu5kgc06.execute-api.ap-southeast-2.amazonaws.com`
+* **Health Check**:  
+  `https://htnu5kgc06.execute-api.ap-southeast-2.amazonaws.com/health`
+* **Models Catalog**:  
+  `https://htnu5kgc06.execute-api.ap-southeast-2.amazonaws.com/api/models`
+* **S3 Bucket**:  
+  `s3://chest-xray-images-399855128301` (`ap-southeast-2`)
+
+### Key Components:
+- **`lambda_function.py`**: Serverless handler handling clinical pre-flight checks, S3 image archiving, and multi-model catalog routing.
+- **`deploy_aws.py`**: Deployment automation script using Boto3 to provision the S3 bucket, upload weights, package Lambda, and connect API Gateway.
+
+---
+
+## 7. Automated CI/CD Pipeline (GitHub Actions)
+
+A multi-stage GitHub Actions workflow is defined in [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml):
+
+```
+┌─────────────────────────┐     ┌─────────────────────────┐
+│     1. Frontend CI      │     │      2. Backend CI      │
+│  (React + Vite Build)   │     │ (PyCompile & Lint Test) │
+└────────────┬────────────┘     └────────────┬────────────┘
+             │                               │
+             └───────────────┬───────────────┘
+                             ▼
+              ┌─────────────────────────────┐
+              │      3. AWS Cloud CD        │
+              │  • S3 Model Metadata Sync   │
+              │  • AWS Lambda Code Update   │
+              │  • Live API Smoke Test      │
+              └─────────────────────────────┘
+```
+
+### GitHub Secrets Required:
+To enable automated deployments on commit, configure these repository secrets in GitHub (`Settings` > `Secrets and variables` > `Actions`):
+- `AWS_ACCESS_KEY_ID`: Your IAM access key ID
+- `AWS_SECRET_ACCESS_KEY`: Your IAM secret access key
+
+---
+
+## 8. Alternative Cloud Platforms
 
 Google Cloud offers an **e2-micro instance** with 30 GB standard persistent disk in `us-central1`, `us-west1`, or `us-east1` that is **Always Free**.
 

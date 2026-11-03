@@ -19,6 +19,10 @@ frontend/.nodeenv*/
 .env
 .env.local
 
+# Build packages & archives
+*.zip
+lambda_package.zip
+
 # OS & IDE files
 .DS_Store
 Thumbs.db

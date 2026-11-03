@@ -13,5 +13,5 @@ echo Backend started on http://127.0.0.1:8000
 echo Frontend started on http://127.0.0.1:5173
 echo.
 echo Application is opening in your browser...
-timeout /t 3 >nul
+ping 127.0.0.1 -n 4 >nul
 start http://127.0.0.1:5173
