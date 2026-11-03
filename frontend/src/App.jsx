@@ -547,10 +547,11 @@ function App() {
       return;
     }
 
+    const displayFilename = result?.image?.filename || file?.name || "your X-ray image";
     setChatMessages([
       {
         role: "assistant",
-        text: `The screening report for ${result.image.filename} is ready. I can explain the result, confidence, heatmaps, common X-ray terms, and general information about COVID-19, pneumonia, tuberculosis, and normal results.`
+        text: `The screening report for ${displayFilename} is ready. I can explain the result, confidence, heatmaps, common X-ray terms, and general information about COVID-19, pneumonia, tuberculosis, and normal results.`
       }
     ]);
   }, [result]);
