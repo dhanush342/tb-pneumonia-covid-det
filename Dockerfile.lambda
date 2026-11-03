@@ -12,3 +12,4 @@ COPY *.json ./
 COPY lambda_adapter.py ./
 
 CMD ["lambda_adapter.handler"]
+

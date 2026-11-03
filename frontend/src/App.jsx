@@ -1,7 +1,14 @@
 import { useEffect, useState } from "react";
 
+const CLOUD_API_URL = "https://htnu5kgc06.execute-api.ap-southeast-2.amazonaws.com";
+const isLocalhost =
+  typeof window !== "undefined" &&
+  (window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1" ||
+    window.location.hostname.startsWith("192.168."));
 const apiBaseUrl =
-  import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:8000`;
+  import.meta.env.VITE_API_BASE_URL ||
+  (isLocalhost ? `${window.location.protocol}//${window.location.hostname}:8000` : CLOUD_API_URL);
 const TORCHXRAYVISION_MODEL_ID = "torchxrayvision-densenet121-4class";
 // Confidence thresholds used by the screening result and chatbot explanations.
 const SPECIALIST_DISEASE_THRESHOLD = 80;
