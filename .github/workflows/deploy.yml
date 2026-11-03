@@ -89,18 +89,89 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Package Lambda Function
-        run: |
-          echo "Packaging lambda_function.py into lambda_package.zip..."
-          zip -j lambda_package.zip lambda_function.py
+      - name: Log in to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Deploy Lambda Code
+      - name: Build and Push Lambda Container Image
+        env:
+          ECR_REGISTRY: 399855128301.dkr.ecr.ap-southeast-2.amazonaws.com
+          ECR_REPOSITORY: chest-xray-backend
+          IMAGE_TAG: latest
         run: |
-          echo "Deploying to AWS Lambda: $LAMBDA_FUNCTION_NAME..."
-          aws lambda update-function-code \
-            --function-name $LAMBDA_FUNCTION_NAME \
-            --zip-file fileb://lambda_package.zip \
-            --region $AWS_REGION
+          echo "Building Docker container for Lambda PyTorch backend..."
+          docker build -f Dockerfile.lambda -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          echo "Pushing Docker image to Amazon ECR..."
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+      - name: Deploy Container to AWS Lambda
+        env:
+          ECR_IMAGE: 399855128301.dkr.ecr.ap-southeast-2.amazonaws.com/chest-xray-backend:latest
+          ROLE_ARN: arn:aws:iam::399855128301:role/chest-xray-lambda-execution-role
+        run: |
+          echo "Checking package type of Lambda function..."
+          PACKAGE_TYPE=$(aws lambda get-function-configuration --function-name $LAMBDA_FUNCTION_NAME --region $AWS_REGION --query 'PackageType' --output text 2>/dev/null || echo "NOT_FOUND")
+
+          if [ "$PACKAGE_TYPE" = "Zip" ]; then
+            echo "Re-creating Lambda function with Image package type..."
+            aws lambda delete-function --function-name $LAMBDA_FUNCTION_NAME --region $AWS_REGION
+            sleep 5
+            PACKAGE_TYPE="NOT_FOUND"
+          fi
+
+          if [ "$PACKAGE_TYPE" = "NOT_FOUND" ]; then
+            echo "Creating new container-based Lambda function..."
+            aws lambda create-function \
+              --function-name $LAMBDA_FUNCTION_NAME \
+              --package-type Image \
+              --code ImageUri=$ECR_IMAGE \
+              --role $ROLE_ARN \
+              --timeout 60 \
+              --memory-size 3008 \
+              --environment "Variables={AWS_S3_BUCKET_NAME=$S3_BUCKET,AWS_REGION=$AWS_REGION}" \
+              --region $AWS_REGION
+
+            sleep 10
+            aws lambda add-permission \
+              --function-name $LAMBDA_FUNCTION_NAME \
+              --statement-id ApiGatewayInvokePermission \
+              --action lambda:InvokeFunction \
+              --principal apigateway.amazonaws.com \
+              --region $AWS_REGION || true
+
+            aws lambda create-function-url-config \
+              --function-name $LAMBDA_FUNCTION_NAME \
+              --auth-type NONE \
+              --cors '{"AllowOrigins":["*"],"AllowMethods":["*"],"AllowHeaders":["*"],"MaxAge":86400}' \
+              --region $AWS_REGION || true
+
+            aws lambda add-permission \
+              --function-name $LAMBDA_FUNCTION_NAME \
+              --statement-id FunctionURLAllowPublicAccess \
+              --action lambda:InvokeFunctionUrl \
+              --principal "*" \
+              --function-url-auth-type NONE \
+              --region $AWS_REGION || true
+
+            aws lambda add-permission \
+              --function-name $LAMBDA_FUNCTION_NAME \
+              --statement-id FunctionURLAllowInvoke \
+              --action lambda:InvokeFunction \
+              --principal "*" \
+              --region $AWS_REGION || true
+          else
+            echo "Updating existing container Lambda function..."
+            aws lambda update-function-code \
+              --function-name $LAMBDA_FUNCTION_NAME \
+              --image-uri $ECR_IMAGE \
+              --region $AWS_REGION
+
+            aws lambda update-function-configuration \
+              --function-name $LAMBDA_FUNCTION_NAME \
+              --timeout 60 \
+              --memory-size 3008 \
+              --environment "Variables={AWS_S3_BUCKET_NAME=$S3_BUCKET,AWS_REGION=$AWS_REGION}" \
+              --region $AWS_REGION
+          fi
 
       - name: Sync Model Metadata to AWS S3
         run: |

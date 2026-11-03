@@ -1,6 +1,7 @@
 import base64
 import io
 import json
+import os
 from dataclasses import dataclass, replace
 from pathlib import Path
 from threading import Lock
@@ -166,16 +167,53 @@ def _candidate_dirs_for(spec: ModelSpec) -> Tuple[Path, ...]:
 
 
 def _resolve_model_path(spec: ModelSpec) -> Optional[Path]:
-    for directory in _candidate_dirs_for(spec):
+    tmp_dir = Path("/tmp/models")
+    for directory in _candidate_dirs_for(spec) + (tmp_dir,):
         path = directory / spec.filename
         if path.exists():
             return path
+
+    # If running in serverless / container, try downloading from S3
+    bucket_name = os.getenv("AWS_S3_BUCKET_NAME", "chest-xray-images-399855128301")
+    region = os.getenv("AWS_REGION", "ap-southeast-2")
+    try:
+        import boto3
+        s3 = boto3.client("s3", region_name=region)
+        tmp_dir.mkdir(parents=True, exist_ok=True)
+        dest = tmp_dir / spec.filename
+        _log_model(f"Downloading {spec.filename} from s3://{bucket_name}/models/ ...")
+        s3.download_file(bucket_name, f"models/{spec.filename}", str(dest))
+        if dest.exists():
+            _log_model(f"Downloaded {spec.filename} to {dest}")
+            return dest
+    except Exception as e:
+        _log_model(f"Failed to download {spec.filename} from S3: {e}")
+
     return None
 
 
 def _sidecar_path(model_path: Path, suffix: str) -> Optional[Path]:
-    path = model_path.with_name(f"{model_path.stem}.{suffix}.json")
-    return path if path.exists() else None
+    filename = f"{model_path.stem}.{suffix}.json"
+    path = model_path.with_name(filename)
+    if path.exists():
+        return path
+
+    tmp_path = Path("/tmp/models") / filename
+    if tmp_path.exists():
+        return tmp_path
+
+    bucket_name = os.getenv("AWS_S3_BUCKET_NAME", "chest-xray-images-399855128301")
+    region = os.getenv("AWS_REGION", "ap-southeast-2")
+    try:
+        import boto3
+        s3 = boto3.client("s3", region_name=region)
+        tmp_path.parent.mkdir(parents=True, exist_ok=True)
+        s3.download_file(bucket_name, f"models/{filename}", str(tmp_path))
+        if tmp_path.exists():
+            return tmp_path
+    except Exception:
+        pass
+    return None
 
 
 def _load_json_file(path: Optional[Path]) -> Optional[Dict[str, object]]:

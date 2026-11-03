@@ -1,0 +1,14 @@
+FROM public.ecr.aws/lambda/python:3.10
+
+RUN yum install -y mesa-libGL glib2 && yum clean all
+
+WORKDIR ${LAMBDA_TASK_ROOT}
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir mangum -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
+
+COPY backend/ ./backend/
+COPY *.json ./
+COPY lambda_adapter.py ./
+
+CMD ["lambda_adapter.handler"]
