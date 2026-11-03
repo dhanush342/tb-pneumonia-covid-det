@@ -108,6 +108,14 @@ jobs:
           aws s3 cp torchxrayvision_densenet121_4class.labels.json s3://$S3_BUCKET/models/ --region $AWS_REGION || true
           aws s3 cp torchxrayvision_densenet121_4class.metadata.json s3://$S3_BUCKET/models/ --region $AWS_REGION || true
 
+      - name: Deploy React Frontend to AWS S3 Website
+        run: |
+          echo "Building & Deploying React frontend to s3://chest-xray-ui-399855128301..."
+          cd frontend
+          npm ci
+          VITE_API_BASE_URL="$API_GATEWAY_URL" npm run build
+          aws s3 sync dist/ s3://chest-xray-ui-399855128301/ --delete --region $AWS_REGION
+
       - name: Verify Live Deployment (Smoke Test)
         run: |
           echo "Pinging live API endpoint: $API_GATEWAY_URL/health"
@@ -118,4 +126,5 @@ jobs:
             exit 1
           fi
           echo "✓ Live cloud API health check passed (HTTP 200 OK)!"
+          echo "✓ Live Frontend Website: http://chest-xray-ui-399855128301.s3-website-ap-southeast-2.amazonaws.com"
 
